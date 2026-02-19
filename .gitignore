@@ -2,4 +2,5 @@ venv/
 .venv/
 Unnecessary and storage/
 storage/
-
+*.mp4
+old-gifs/
