@@ -3,11 +3,11 @@ import numpy as np
 from tensorflow.keras.models import load_model
 
 # .\.venv\Scripts\Activate.ps1
-# python simple_webcam_recognition.py
+# python webcam_recognition.py
 
 # Load both models
-model_digit = load_model('model.h5')  # Digits only
-model_char = load_model('model_char_num.h5')  # Characters + digits
+model_digit = load_model('models/digits_model.h5')  # Digits only
+model_char = load_model('models/chars_and_digits_model.h5')  # Characters + digits
 
 # Load EMNIST mapping for character recognition
 def load_emnist_mapping(mapping_file):
