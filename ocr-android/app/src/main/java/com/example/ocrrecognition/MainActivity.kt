@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
@@ -273,6 +274,7 @@ fun PredictionOverlay(
     zoomRatio: Float, onZoomChange: (Float) -> Unit, camera: Camera?
 ) {
     val maxZoom = camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 1f
+    val density = LocalDensity.current.density
     val currentRoi = rememberUpdatedState(userRoi)
     val currentZoom = rememberUpdatedState(zoomRatio)
 
@@ -305,8 +307,8 @@ fun PredictionOverlay(
                 .border(2.dp, Color.Green)
                 .pointerInput(Unit) {
                     detectDragGestures { _, dragAmount ->
-                        val ndx = dragAmount.x / (fw * scale)
-                        val ndy = dragAmount.y / (fh * scale)
+                        val ndx = dragAmount.x / density / (fw * scale)
+                        val ndy = dragAmount.y / density / (fh * scale)
                         val r = currentRoi.value
                         onRoiChange(r.copy(
                             x = (r.x + ndx).coerceIn(0f, 1f - r.w),
@@ -317,16 +319,16 @@ fun PredictionOverlay(
         )
 
         CornerHandle(boxX, boxY) { dx, dy ->
-            onRoiChange(adjustRoiForCorner(currentRoi.value, Corner.TOP_LEFT, dx / (fw * scale), dy / (fh * scale)))
+            onRoiChange(adjustRoiForCorner(currentRoi.value, Corner.TOP_LEFT, dx / density / (fw * scale), dy / density / (fh * scale)))
         }
         CornerHandle(boxX + boxW, boxY) { dx, dy ->
-            onRoiChange(adjustRoiForCorner(currentRoi.value, Corner.TOP_RIGHT, dx / (fw * scale), dy / (fh * scale)))
+            onRoiChange(adjustRoiForCorner(currentRoi.value, Corner.TOP_RIGHT, dx / density / (fw * scale), dy / density / (fh * scale)))
         }
         CornerHandle(boxX, boxY + boxH) { dx, dy ->
-            onRoiChange(adjustRoiForCorner(currentRoi.value, Corner.BOTTOM_LEFT, dx / (fw * scale), dy / (fh * scale)))
+            onRoiChange(adjustRoiForCorner(currentRoi.value, Corner.BOTTOM_LEFT, dx / density / (fw * scale), dy / density / (fh * scale)))
         }
         CornerHandle(boxX + boxW, boxY + boxH) { dx, dy ->
-            onRoiChange(adjustRoiForCorner(currentRoi.value, Corner.BOTTOM_RIGHT, dx / (fw * scale), dy / (fh * scale)))
+            onRoiChange(adjustRoiForCorner(currentRoi.value, Corner.BOTTOM_RIGHT, dx / density / (fw * scale), dy / density / (fh * scale)))
         }
 
         response?.let { r ->

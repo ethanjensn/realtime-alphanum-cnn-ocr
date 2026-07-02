@@ -95,6 +95,7 @@ def predict(frame, mode, roi_x=None, roi_y=None, roi_w=None, roi_h=None):
     if mode == 'char':
         input_img = normalized.reshape(1, 28, 28, 1)
         prediction = model_char.predict(input_img, verbose=0)
+        prediction = np.exp(prediction) / np.sum(np.exp(prediction), axis=1, keepdims=True)
         confidence = float(np.max(prediction))
         pred_class = int(np.argmax(prediction))
         pred_label = emnist_mapping.get(pred_class, '?')

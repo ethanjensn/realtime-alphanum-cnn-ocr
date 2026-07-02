@@ -31,6 +31,9 @@ Two interfaces are available:
 | --- | --- |
 | ![Demo 1](Docs/char-demo-gif-1x-high-quality.gif) | ![Demo 2](Docs/char-and-num-demo-high-qual-1.25x.gif) |
 
+### Android app demo
+<video controls src="Docs/App-Demo.mp4" width="100%"></video>
+
 ## Model Insights
 
 - **CharCNN confusion matrix:** ![Confusion matrix](Docs/CharCNN-Confusion-Matrix/output.png)
