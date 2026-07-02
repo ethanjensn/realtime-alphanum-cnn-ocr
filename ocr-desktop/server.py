@@ -70,15 +70,21 @@ def preprocess_for_display(roi):
     return thresh
 
 
-def predict(frame, mode):
-    """Run inference on the central ROI of the supplied frame."""
+def predict(frame, mode, roi_x=None, roi_y=None, roi_w=None, roi_h=None):
+    """Run inference on the specified ROI of the supplied frame."""
     height, width = frame.shape[:2]
 
-    roi_w = min(200, width)
-    roi_h = min(200, height)
-    x = (width - roi_w) // 2
-    y = (height - roi_h) // 2
-    roi = frame[y:y + roi_h, x:x + roi_w]
+    if roi_x is not None and roi_y is not None and roi_w is not None and roi_h is not None:
+        x = max(0, int(roi_x * width))
+        y = max(0, int(roi_y * height))
+        w = max(28, min(int(roi_w * width), width - x))
+        h = max(28, min(int(roi_h * height), height - y))
+    else:
+        w = min(200, width)
+        h = min(200, height)
+        x = (width - w) // 2
+        y = (height - h) // 2
+    roi = frame[y:y + h, x:x + w]
 
     normalized, model_thresh = preprocess_for_model(roi)
 
@@ -151,9 +157,16 @@ def predict_endpoint():
         if frame is None:
             return jsonify({'error': 'Could not decode image'}), 400
 
-        result = predict(frame, mode)
+        roi_x = request.form.get('roi_x', type=float)
+        roi_y = request.form.get('roi_y', type=float)
+        roi_w = request.form.get('roi_w', type=float)
+        roi_h = request.form.get('roi_h', type=float)
+
+        result = predict(frame, mode, roi_x, roi_y, roi_w, roi_h)
         return jsonify(result)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 

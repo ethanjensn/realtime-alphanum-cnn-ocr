@@ -1,0 +1,5 @@
+package com.example.ocrrecognition
+
+// Copy this file to ServerConfig.kt and replace the IP with your desktop's LAN IP.
+// ServerConfig.kt is gitignored to avoid committing personal IP addresses.
+const val SERVER_URL = "http://YOUR_DESKTOP_IP:5000/predict"

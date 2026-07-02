@@ -14,3 +14,4 @@ ocr-android/.idea/
 ocr-android/captures/
 ocr-android/.cxx/
 ocr-android/*.iml
+ocr-android/**/ServerConfig.kt
