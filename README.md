@@ -10,7 +10,7 @@ This project uses Convolutional Neural Networks (CNNs) to recognize handwritten 
 
 Two interfaces are available:
 - **Desktop webcam** (`ocr-desktop/webcam_recognition.py`): OpenCV-based real-time recognition from your webcam
-- **Android app** (`ocr-android/`): CameraX-based app that streams frames to a Flask server for inference, with pinch-to-zoom and an interactive draggable/resizable ROI bounding box
+- **Android app** (`ocr-android/`): CameraX-based app with **on-device TensorFlow Lite inference** (no server required), with pinch-to-zoom and an interactive draggable/resizable ROI bounding box. A server mode is also available as a fallback.
 
 ## Features
 
@@ -24,6 +24,8 @@ Two interfaces are available:
   - Pinch-to-zoom using CameraX native digital zoom
   - Drag the green bounding box to reposition the ROI
   - Drag any of the 4 corner handles to resize the ROI
+  - **LOCAL/SERVER toggle** to switch between on-device TFLite inference and the Flask server
+  - On-device inference uses OpenCV Android SDK for identical preprocessing (bilateral filter + Otsu threshold)
   - Server adapts to the user-defined ROI in real-time
 
 ## Live Demos
@@ -55,6 +57,20 @@ python webcam_recognition.py
 
 ### Android app
 
+#### Local mode (default — no server needed)
+
+The app runs inference on-device using TensorFlow Lite by default. The `.tflite` models and EMNIST mapping are bundled as assets in the APK.
+
+1. Convert the Keras models to TFLite (if not already done):
+```bash
+cd ocr-desktop
+python convert_to_tflite.py
+```
+2. The `.tflite` files and `emnist-byclass-mapping.txt` are in `ocr-android/app/src/main/assets/`.
+3. Build and run the app on your Android device using Android Studio.
+
+#### Server mode (optional fallback)
+
 1. Start the Flask server on your desktop:
 ```bash
 cd ocr-desktop
@@ -70,7 +86,7 @@ cp ocr-android/app/src/main/java/com/example/ocrrecognition/ServerConfig.kt.exam
 ```kotlin
 const val SERVER_URL = "http://123.000.0.000:5000/predict"
 ```
-5. Build and run the app on your Android device using Android Studio.
+5. Build and run the app, then tap **LOCAL** to switch to **SERVER** mode.
 
 > **Note:** `ServerConfig.kt` is gitignored to prevent committing personal IP addresses. Only `ServerConfig.kt.example` is tracked in the repository.
 
@@ -86,6 +102,7 @@ const val SERVER_URL = "http://123.000.0.000:5000/predict"
 - **Pinch anywhere** on the camera preview to zoom in/out
 - **Drag the green box** to reposition the ROI
 - **Drag any corner handle** to resize the ROI
+- Tap **LOCAL / SERVER** to toggle between on-device and server inference
 - Tap **Switch to CHAR / DIGIT** to toggle recognition modes
 - Prediction label and threshold image display on screen
 
@@ -113,9 +130,16 @@ python training/digits_and_chars/CharCNN_train.py
 
 ## Requirements
 
+### Desktop
 - Python 3.x
 - OpenCV
 - TensorFlow/Keras
 - NumPy
 - Matplotlib
+
+### Android
+- Android Studio
+- TensorFlow Lite (`org.tensorflow:tensorflow-lite`)
+- OpenCV Android SDK (`org.opencv:opencv`)
+- CameraX, Compose, OkHttp (already in Gradle config)
 

@@ -10,3 +10,13 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# LiteRT (TensorFlow Lite successor)
+-keep class org.tensorflow.lite.** { *; }
+-keep class com.google.ai.edge.litert.** { *; }
+
+# OpenCV
+-keep class org.opencv.** { *; }
+-keep class org.opencv.core.** { *; }
+-keep class org.opencv.imgproc.** { *; }
+-keep class org.opencv.android.** { *; }

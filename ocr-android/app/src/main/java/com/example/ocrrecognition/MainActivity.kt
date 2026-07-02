@@ -124,25 +124,32 @@ class MainActivity : ComponentActivity() {
         setContent {
             OCRRecognitionTheme {
                 var mode by remember { mutableStateOf("digit") }
+                var useLocalInference by remember { mutableStateOf(true) }
                 Scaffold(Modifier.fillMaxSize(), topBar = {
                     Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically) {
                             Text("OCR Recognition", style = MaterialTheme.typography.titleLarge)
-                            Button({ mode = if (mode == "digit") "char" else "digit" }) {
-                                Text(if (mode == "digit") "Switch to CHAR" else "Switch to DIGIT")
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Button({ useLocalInference = !useLocalInference }) {
+                                    Text(if (useLocalInference) "LOCAL" else "SERVER")
+                                }
+                                Button({ mode = if (mode == "digit") "char" else "digit" }) {
+                                    Text(if (mode == "digit") "Switch to CHAR" else "Switch to DIGIT")
+                                }
                             }
                         }
                     }
-                }) { CameraScreen(Modifier.padding(it), mode) }
+                }) { CameraScreen(Modifier.padding(it), mode, useLocalInference) }
             }
         }
     }
 }
 
 @Composable
-fun CameraScreen(modifier: Modifier = Modifier, mode: String) {
+fun CameraScreen(modifier: Modifier = Modifier, mode: String, useLocalInference: Boolean) {
     val context = LocalContext.current
     var hasPermission by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
@@ -152,6 +159,8 @@ fun CameraScreen(modifier: Modifier = Modifier, mode: String) {
         if (!g) Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
     }
     LaunchedEffect(Unit) { if (!hasPermission) permLauncher.launch(Manifest.permission.CAMERA) }
+
+    val ocrInterpreter = remember { OcrInterpreter(context) }
 
     if (hasPermission) {
         Box(modifier.fillMaxSize()) {
@@ -163,8 +172,8 @@ fun CameraScreen(modifier: Modifier = Modifier, mode: String) {
             var zoomRatio by remember { mutableFloatStateOf(1f) }
             var camera by remember { mutableStateOf<Camera?>(null) }
             CameraPreview(
-                Modifier.fillMaxSize(), mode, onPrediction, onFrameSize,
-                userRoi, { camera = it }
+                Modifier.fillMaxSize(), mode, useLocalInference, ocrInterpreter,
+                onPrediction, onFrameSize, userRoi, { camera = it }
             )
             PredictionOverlay(
                 Modifier.fillMaxSize(), prediction.value, frameSize,
@@ -184,7 +193,8 @@ fun CameraScreen(modifier: Modifier = Modifier, mode: String) {
 
 @Composable
 fun CameraPreview(
-    modifier: Modifier = Modifier, mode: String,
+    modifier: Modifier = Modifier, mode: String, useLocalInference: Boolean,
+    ocrInterpreter: OcrInterpreter,
     onPrediction: (PredictionResponse) -> Unit, onFrameSize: (android.util.Size) -> Unit,
     userRoi: NormalizedRoi, onCameraReady: (Camera) -> Unit
 ) {
@@ -192,6 +202,7 @@ fun CameraPreview(
     val lifecycleOwner = LocalLifecycleOwner.current
     var isProcessing by remember { mutableStateOf(false) }
     val currentRoi = rememberUpdatedState(userRoi)
+    val currentUseLocal = rememberUpdatedState(useLocalInference)
     val analyzer = remember(mode, onPrediction, onFrameSize) {
         ImageAnalysis.Analyzer { img: ImageProxy ->
             if (isProcessing) { img.close(); return@Analyzer }
@@ -209,11 +220,23 @@ fun CameraPreview(
             val cropped = if (rowPadding > 0) Bitmap.createBitmap(bmp, 0, 0, w, h) else bmp
             val rotated = rotateBitmap(cropped, rot)
             onFrameSize(android.util.Size(rotated.width, rotated.height))
-            val out = ByteArrayOutputStream()
-            rotated.compress(Bitmap.CompressFormat.JPEG, 85, out)
             isProcessing = true
             lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                val res = sendFrameToServer(out.toByteArray(), mode, currentRoi.value)
+                val res = if (currentUseLocal.value) {
+                    val roi = currentRoi.value
+                    val rw = rotated.width
+                    val rh = rotated.height
+                    val rx = (roi.x * rw).toInt().coerceIn(0, rw - 28)
+                    val ry = (roi.y * rh).toInt().coerceIn(0, rh - 28)
+                    val rwidth = (roi.w * rw).toInt().coerceIn(28, rw - rx)
+                    val rheight = (roi.h * rh).toInt().coerceIn(28, rh - ry)
+                    val roiBitmap = Bitmap.createBitmap(rotated, rx, ry, rwidth, rheight)
+                    ocrInterpreter.predict(roiBitmap, mode, roi)
+                } else {
+                    val out = ByteArrayOutputStream()
+                    rotated.compress(Bitmap.CompressFormat.JPEG, 85, out)
+                    sendFrameToServer(out.toByteArray(), mode, currentRoi.value)
+                }
                 withContext(Dispatchers.Main) { res?.let(onPrediction); isProcessing = false }
             }
         }
