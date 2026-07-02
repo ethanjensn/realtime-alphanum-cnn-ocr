@@ -51,7 +51,13 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
-private val ocrClient = OkHttpClient()
+private val ocrClient = OkHttpClient.Builder()
+    .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+    .readTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+    .writeTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+    .build()
+
+var serverConnected = false
 
 data class NormalizedRoi(val x: Float, val y: Float, val w: Float, val h: Float)
 
@@ -113,8 +119,9 @@ fun sendFrameToServer(jpeg: ByteArray, mode: String, roi: NormalizedRoi): Predic
         .addFormDataPart("roi_h", roi.h.toString())
         .build()
     return try { ocrClient.newCall(Request.Builder().url(SERVER_URL).post(body).build()).execute().use { res ->
+        serverConnected = true
         if (!res.isSuccessful) { Log.e("OCR", "Server ${res.code}"); null } else res.body?.string()?.let { parsePredictionResponse(it) }
-    }} catch (e: IOException) { Log.e("OCR", "Request failed", e); null }
+    }} catch (e: IOException) { Log.e("OCR", "Request failed", e); serverConnected = false; null }
 }
 
 class MainActivity : ComponentActivity() {
@@ -161,6 +168,7 @@ fun CameraScreen(modifier: Modifier = Modifier, mode: String, useLocalInference:
     LaunchedEffect(Unit) { if (!hasPermission) permLauncher.launch(Manifest.permission.CAMERA) }
 
     val ocrInterpreter = remember { OcrInterpreter(context) }
+    var serverStatus by remember { mutableStateOf(true) }
 
     if (hasPermission) {
         Box(modifier.fillMaxSize()) {
@@ -173,12 +181,27 @@ fun CameraScreen(modifier: Modifier = Modifier, mode: String, useLocalInference:
             var camera by remember { mutableStateOf<Camera?>(null) }
             CameraPreview(
                 Modifier.fillMaxSize(), mode, useLocalInference, ocrInterpreter,
-                onPrediction, onFrameSize, userRoi, { camera = it }
+                onPrediction, onFrameSize, userRoi, { camera = it },
+                onServerStatus = { connected -> serverStatus = connected }
             )
             PredictionOverlay(
                 Modifier.fillMaxSize(), prediction.value, frameSize,
                 userRoi, { userRoi = it }, zoomRatio, { zoomRatio = it }, camera
             )
+            if (!useLocalInference && !serverStatus) {
+                Surface(
+                    color = Color(0xCCFF4444),
+                    modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter)
+                ) {
+                    Text(
+                        "Server not running — tap LOCAL to switch back",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    )
+                }
+            }
         }
     } else {
         Column(modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally,
@@ -196,7 +219,8 @@ fun CameraPreview(
     modifier: Modifier = Modifier, mode: String, useLocalInference: Boolean,
     ocrInterpreter: OcrInterpreter,
     onPrediction: (PredictionResponse) -> Unit, onFrameSize: (android.util.Size) -> Unit,
-    userRoi: NormalizedRoi, onCameraReady: (Camera) -> Unit
+    userRoi: NormalizedRoi, onCameraReady: (Camera) -> Unit,
+    onServerStatus: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -235,7 +259,9 @@ fun CameraPreview(
                 } else {
                     val out = ByteArrayOutputStream()
                     rotated.compress(Bitmap.CompressFormat.JPEG, 85, out)
-                    sendFrameToServer(out.toByteArray(), mode, currentRoi.value)
+                    val result = sendFrameToServer(out.toByteArray(), mode, currentRoi.value)
+                    withContext(Dispatchers.Main) { onServerStatus(serverConnected) }
+                    result
                 }
                 withContext(Dispatchers.Main) { res?.let(onPrediction); isProcessing = false }
             }
