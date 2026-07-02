@@ -151,11 +151,18 @@ fun CameraPreview(
         ImageAnalysis.Analyzer { img: ImageProxy ->
             if (isProcessing) { img.close(); return@Analyzer }
             val rot = img.imageInfo.rotationDegrees
-            val bmp = createBitmap(img.width, img.height, Bitmap.Config.ARGB_8888)
-            img.planes[0].buffer.rewind()
-            bmp.copyPixelsFromBuffer(img.planes[0].buffer)
+            val w = img.width
+            val h = img.height
+            val plane = img.planes[0]
+            val buffer = plane.buffer.rewind()
+            val pixelStride = plane.pixelStride
+            val rowStride = plane.rowStride
+            val rowPadding = rowStride - pixelStride * w
+            val bmp = createBitmap(w + rowPadding / pixelStride, h, Bitmap.Config.ARGB_8888)
+            bmp.copyPixelsFromBuffer(buffer)
             img.close()
-            val rotated = rotateBitmap(bmp, rot)
+            val cropped = if (rowPadding > 0) Bitmap.createBitmap(bmp, 0, 0, w, h) else bmp
+            val rotated = rotateBitmap(cropped, rot)
             onFrameSize(android.util.Size(rotated.width, rotated.height))
             val out = ByteArrayOutputStream()
             rotated.compress(Bitmap.CompressFormat.JPEG, 85, out)
@@ -177,7 +184,7 @@ fun CameraPreview(
             future.addListener({
                 val provider = future.get()
                 val resSel = ResolutionSelector.Builder().setResolutionStrategy(
-                    ResolutionStrategy(android.util.Size(640, 480), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+                    ResolutionStrategy(android.util.Size(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
                 ).build()
                 val preview = CameraPreview.Builder().setResolutionSelector(resSel).build()
                     .also { it.surfaceProvider = view.surfaceProvider }

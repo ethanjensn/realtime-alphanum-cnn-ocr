@@ -39,8 +39,8 @@ def load_emnist_mapping(mapping_file):
 emnist_mapping = load_emnist_mapping(MAPPING_PATH)
 
 
-def preprocess(roi):
-    """Apply the same preprocessing pipeline as webcam_recognition.py."""
+def preprocess_for_model(roi):
+    """Original pipeline the model was trained on."""
     if len(roi.shape) == 3:
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
     else:
@@ -60,7 +60,21 @@ def preprocess(roi):
         cv2.THRESH_BINARY_INV, 71, 15
     )
     normalized = thresh / 255.0
-    return normalized, thresh
+    return normalized
+
+
+def preprocess_for_display(roi):
+    """Crisp bilateral filter + Otsu for on-screen display only."""
+    if len(roi.shape) == 3:
+        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = roi
+
+    smoothed = cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
+    _, thresh = cv2.threshold(
+        smoothed, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+    )
+    return thresh
 
 
 def predict(frame, mode):
@@ -73,10 +87,9 @@ def predict(frame, mode):
     y = (height - roi_h) // 2
     roi = frame[y:y + roi_h, x:x + roi_w]
 
-    normalized, thresh = preprocess(roi)
+    normalized = preprocess_for_model(roi)
+    display_thresh = preprocess_for_display(roi)
 
-    # Upscale the 28x28 threshold image so it is visible on the phone screen.
-    display_thresh = cv2.resize(thresh, (200, 200), interpolation=cv2.INTER_NEAREST)
     _, thresh_buffer = cv2.imencode('.png', display_thresh)
     threshold_b64 = base64.b64encode(thresh_buffer).decode('utf-8')
 
