@@ -3,7 +3,6 @@ venv/
 Unnecessary and storage/
 storage/
 *.mp4
-!Docs/App-Demo.mp4
 old-gifs/
 ocr-desktop/__pycache__
 

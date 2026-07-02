@@ -17,6 +17,7 @@ Two interfaces are available:
 - Real-time recognition with live preview (desktop or Android)
 - Switchable modes between digit-only and character+digit recognition
 - Preprocessing pipeline for improved accuracy (bilateral filtering, Otsu's binarization, resizing)
+- **Upgraded noise reduction:** switched from Gaussian blur to bilateral filtering, then applies Otsu's binarization for crisp, edge-preserving thresholding without speckle noise
 - Visual feedback with confidence scores and threshold image preview
 - ROI (Region of Interest) selection for focused recognition
 - **Android app interactive controls:**
@@ -27,18 +28,15 @@ Two interfaces are available:
 
 ## Live Demos
 
-| Demo 1 | Demo 2 |
-| --- | --- |
-| ![Demo 1](Docs/char-demo-gif-1x-high-quality.gif) | ![Demo 2](Docs/char-and-num-demo-high-qual-1.25x.gif) |
-
-### Android app demo
-<video controls src="Docs/App-Demo.mp4" width="100%"></video>
+| Demo 1 | Demo 2 | App Demo |
+| --- | --- | --- |
+| ![Demo 1](Docs/char-demo-gif-1x-high-quality.gif) | ![Demo 2](Docs/char-and-num-demo-high-qual-1.25x.gif) | ![App Demo](Docs/App-Demo.gif) |
 
 ## Model Insights
 
-- **CharCNN confusion matrix:** ![Confusion matrix](Docs/CharCNN-Confusion-Matrix/output.png)
-- **CNN activations before hidden layer:** ![CNN before hidden layer](Docs/CNN-B4-HIdden-Layer/Screenshot%202026-02-19%20145841.png)
-- **CNN activations after hidden layer:** ![CNN after hidden layer](Docs/CNN-After-HIdden-Layer/Screenshot%202026-02-19%20150302.png)
+- **CharCNN confusion matrix:**<br><a href="Docs/CharCNN-Confusion-Matrix/output.png"><img src="Docs/CharCNN-Confusion-Matrix/output.png" width="400"></a>
+- **CNN activations before hidden layer:**<br><a href="Docs/CNN-B4-HIdden-Layer/Screenshot%202026-02-19%20145841.png"><img src="Docs/CNN-B4-HIdden-Layer/Screenshot%202026-02-19%20145841.png" width="400"></a>
+- **CNN activations after hidden layer:**<br><a href="Docs/CNN-After-HIdden-Layer/Screenshot%202026-02-19%20150302.png"><img src="Docs/CNN-After-HIdden-Layer/Screenshot%202026-02-19%20150302.png" width="400"></a>
 
 ## Setup
 
