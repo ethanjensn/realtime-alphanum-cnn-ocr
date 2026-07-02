@@ -1,20 +1,29 @@
 # Live Number and Character Recognition
 
-Real-time digit and character recognition using CNN models with webcam input.
+Real-time digit and character recognition using CNN models with webcam or Android phone camera input.
 
 ## Overview
 
-This project uses Convolutional Neural Networks (CNNs) to recognize handwritten digits (0-9) and characters (A-Z, a-z) in real-time through a webcam feed. The system includes two trained models:
+This project uses Convolutional Neural Networks (CNNs) to recognize handwritten digits (0-9) and characters (A-Z, a-z) in real-time. The system includes two trained models:
 - **Digits model** (`models/digits_model.h5`): Recognizes numbers 0-9
 - **Characters + Digits model** (`models/chars_and_digits_model.h5`): Recognizes both letters and numbers using EMNIST dataset
 
+Two interfaces are available:
+- **Desktop webcam** (`ocr-desktop/webcam_recognition.py`): OpenCV-based real-time recognition from your webcam
+- **Android app** (`ocr-android/`): CameraX-based app that streams frames to a Flask server for inference, with pinch-to-zoom and an interactive draggable/resizable ROI bounding box
+
 ## Features
 
-- Real-time webcam recognition with live preview
+- Real-time recognition with live preview (desktop or Android)
 - Switchable modes between digit-only and character+digit recognition
-- Preprocessing pipeline for improved accuracy (resizing, blur, sharpening, thresholding)
-- Visual feedback with confidence scores
+- Preprocessing pipeline for improved accuracy (bilateral filtering, Otsu's binarization, resizing)
+- Visual feedback with confidence scores and threshold image preview
 - ROI (Region of Interest) selection for focused recognition
+- **Android app interactive controls:**
+  - Pinch-to-zoom using CameraX native digital zoom
+  - Drag the green bounding box to reposition the ROI
+  - Drag any of the 4 corner handles to resize the ROI
+  - Server adapts to the user-defined ROI in real-time
 
 ## Live Demos
 
@@ -30,6 +39,8 @@ This project uses Convolutional Neural Networks (CNNs) to recognize handwritten 
 
 ## Setup
 
+### Desktop (webcam)
+
 1. Install dependencies:
 ```bash
 pip install -r ocr-desktop/requirements.txt
@@ -41,12 +52,41 @@ cd ocr-desktop
 python webcam_recognition.py
 ```
 
+### Android app
+
+1. Start the Flask server on your desktop:
+```bash
+cd ocr-desktop
+python server.py
+```
+2. Note your desktop's LAN IP (e.g., `123.000.0.000`). The server prints it on startup.
+3. Copy the server config template:
+```bash
+cp ocr-android/app/src/main/java/com/example/ocrrecognition/ServerConfig.kt.example \
+   ocr-android/app/src/main/java/com/example/ocrrecognition/ServerConfig.kt
+```
+4. Edit `ServerConfig.kt` and replace `YOUR_DESKTOP_IP` with your desktop's LAN IP:
+```kotlin
+const val SERVER_URL = "http://123.000.0.000:5000/predict"
+```
+5. Build and run the app on your Android device using Android Studio.
+
+> **Note:** `ServerConfig.kt` is gitignored to prevent committing personal IP addresses. Only `ServerConfig.kt.example` is tracked in the repository.
+
 ## Usage
 
+### Desktop webcam
 - **Q**: Quit the application
 - **M**: Switch between digit mode and character mode
 - Draw digits or characters in the ROI box (green rectangle)
 - Recognition results display with confidence scores
+
+### Android app
+- **Pinch anywhere** on the camera preview to zoom in/out
+- **Drag the green box** to reposition the ROI
+- **Drag any corner handle** to resize the ROI
+- Tap **Switch to CHAR / DIGIT** to toggle recognition modes
+- Prediction label and threshold image display on screen
 
 ## Training
 
