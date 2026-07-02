@@ -4,6 +4,7 @@ Unnecessary and storage/
 storage/
 *.mp4
 old-gifs/
+ocr-desktop/__pycache__
 
 # Android
 ocr-android/.gradle/
