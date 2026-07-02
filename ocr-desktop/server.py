@@ -40,27 +40,20 @@ emnist_mapping = load_emnist_mapping(MAPPING_PATH)
 
 
 def preprocess_for_model(roi):
-    """Original pipeline the model was trained on."""
+    """Bilateral filter + Otsu threshold on 84x84, then resize to 28x28."""
     if len(roi.shape) == 3:
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
     else:
         gray = roi
 
     resized_high = cv2.resize(gray, (84, 84), interpolation=cv2.INTER_CUBIC)
-    blurred = cv2.GaussianBlur(resized_high, (3, 3), 0.5)
-    resized = cv2.resize(blurred, (28, 28), interpolation=cv2.INTER_AREA)
-
-    kernel = np.array([[-0.5, -0.5, -0.5],
-                       [-0.5, 5.0, -0.5],
-                       [-0.5, -0.5, -0.5]])
-    sharpened = cv2.filter2D(resized, -1, kernel)
-
-    thresh = cv2.adaptiveThreshold(
-        sharpened, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY_INV, 71, 15
+    smoothed = cv2.bilateralFilter(resized_high, d=9, sigmaColor=75, sigmaSpace=75)
+    _, thresh = cv2.threshold(
+        smoothed, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
     )
-    normalized = thresh / 255.0
-    return normalized
+    resized = cv2.resize(thresh, (28, 28), interpolation=cv2.INTER_AREA)
+    normalized = resized / 255.0
+    return normalized, resized
 
 
 def preprocess_for_display(roi):
@@ -87,9 +80,9 @@ def predict(frame, mode):
     y = (height - roi_h) // 2
     roi = frame[y:y + roi_h, x:x + roi_w]
 
-    normalized = preprocess_for_model(roi)
-    display_thresh = preprocess_for_display(roi)
+    normalized, model_thresh = preprocess_for_model(roi)
 
+    display_thresh = cv2.resize(model_thresh, (200, 200), interpolation=cv2.INTER_NEAREST)
     _, thresh_buffer = cv2.imencode('.png', display_thresh)
     threshold_b64 = base64.b64encode(thresh_buffer).decode('utf-8')
 
