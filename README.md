@@ -29,13 +29,13 @@ Two interfaces are available:
 
 | Demo 1 | Demo 2 |
 | --- | --- |
-| ![Demo 1](../Docs/char-demo-gif-1x-high-quality.gif) | ![Demo 2](../Docs/char-and-num-demo-high-qual-1.25x.gif) |
+| ![Demo 1](Docs/char-demo-gif-1x-high-quality.gif) | ![Demo 2](Docs/char-and-num-demo-high-qual-1.25x.gif) |
 
 ## Model Insights
 
-- **CharCNN confusion matrix:** ![Confusion matrix](../Docs/CharCNN-Confusion-Matrix/output.png)
-- **CNN activations before hidden layer:** ![CNN before hidden layer](../Docs/CNN-B4-HIdden-Layer/Screenshot%202026-02-19%20145841.png)
-- **CNN activations after hidden layer:** ![CNN after hidden layer](../Docs/CNN-After-HIdden-Layer/Screenshot%202026-02-19%20150302.png)
+- **CharCNN confusion matrix:** ![Confusion matrix](Docs/CharCNN-Confusion-Matrix/output.png)
+- **CNN activations before hidden layer:** ![CNN before hidden layer](Docs/CNN-B4-HIdden-Layer/Screenshot%202026-02-19%20145841.png)
+- **CNN activations after hidden layer:** ![CNN after hidden layer](Docs/CNN-After-HIdden-Layer/Screenshot%202026-02-19%20150302.png)
 
 ## Setup
 
