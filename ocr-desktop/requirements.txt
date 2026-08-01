@@ -1,0 +1,9 @@
+opencv-python==4.8.1.78
+tensorflow==2.19.0
+keras==3.10.0
+scipy==1.11.1
+numpy==1.26.4
+matplotlib==3.7.2
+emnist
+seaborn
+flask==3.0.3
